@@ -8,6 +8,9 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -15,15 +18,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.KeyboardType.Companion.Uri
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.rememberAsyncImagePainter
 import com.example.travelme.*
 import com.example.travelme.R
 import com.example.travelme.ui.components.LevelDropDown
@@ -37,15 +39,11 @@ fun AddTripScreen() {
     val context = LocalContext.current
     val viewState by LocationViewModel.locationViewModel.viewState.collectAsStateWithLifecycle()
 
-    var imageUri by remember { mutableStateOf(arrayOfNulls<Uri?>(4)) }
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { uri ->
-            uri?.let {
-                imageUri = it
-            }
+    var selectImages by remember { mutableStateOf(listOf<Uri>()) }
+    val galleryLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) {
+            selectImages = it
         }
-    )
 
     with(viewState) {
         when (this) {
@@ -59,10 +57,9 @@ fun AddTripScreen() {
 
                 LaunchedEffect(key1 = currentLoc) {
                     cameraState.centerOnLocation(currentLoc)
-                    //spinner = false
                 }
 
-                val marker = LatLng(currentLoc.latitude, currentLoc.longitude)
+                val markerState = rememberMarkerState(position = LatLng(currentLoc.latitude, currentLoc.longitude))
                 var setLengthText by remember { mutableStateOf("") }
                 var currentText by remember { mutableStateOf("") }
                 var setTimeText by remember { mutableStateOf("") }
@@ -82,7 +79,7 @@ fun AddTripScreen() {
                         )
                     ) {
                         Marker(
-                            state = MarkerState(position = marker),
+                            state = markerState,
                             title = "MyPosition",
                             snippet = "This is a description of this Marker",
                             draggable = true
@@ -103,34 +100,30 @@ fun AddTripScreen() {
                         )
                         LevelDropDown()
                     }
-                    Row(
+
+                    Button(
+                        onClick = { galleryLauncher.launch("image/*") },
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .wrapContentSize()
+                            .padding(10.dp)
                     ) {
-                        Text(
-                            text = stringResource(id = R.string.choose_photos),
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Text(text = stringResource(id = R.string.choose_photos))
                     }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    LazyHorizontalGrid(
+                        modifier = Modifier.height(100.dp),
+                        rows = GridCells.Fixed(1)
                     ) {
-                        repeat(4)
-                        {
+                        items(selectImages) { uri ->
                             Image(
-                                painter = painterResource(id = R.drawable.ic_insert_photo),
-                                contentDescription = stringResource(id = R.string.choose_level),
+                                painter = rememberAsyncImagePainter(uri),
+                                contentScale = ContentScale.FillHeight,
+                                contentDescription = null,
                                 modifier = Modifier
-                                    .size(96.dp)
-                                    .clickable { galleryLauncher.launch("image/*") }
+                                    .padding(4.dp, 2.dp)
+                                    .size(100.dp)
+                                    .clickable {
+
+                                    }
                             )
                         }
                     }
@@ -178,7 +171,9 @@ fun AddTripScreen() {
                     }
 
                     Button(
-                        onClick = { /*TODO*/ },
+                        onClick = {
+                            saveTripInDB(markerState.position)
+                        },
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
                             .padding(16.dp)
@@ -192,4 +187,7 @@ fun AddTripScreen() {
     }
 }
 
-
+fun saveTripInDB(position: LatLng)
+{
+    StoreViewModel.storeViewModel.addTrip(position, {}, {})
+}

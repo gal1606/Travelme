@@ -20,7 +20,7 @@
     <string name="liked_trips">trips I like</string>
     <string name="add_trips">add new trip</string>
     <string name="choose_level">Choose difficulty\nlevel</string>
-    <string name="choose_photos">add up to 4 photos</string>
+    <string name="choose_photos">add up to 3 photos</string>
     <string name="trip_description">trip description</string>
     <string name="set_length">set length of trip in km</string>
     <string name="set_time">set time of trip in hours</string>

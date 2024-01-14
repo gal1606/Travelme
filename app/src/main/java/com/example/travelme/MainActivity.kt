@@ -16,6 +16,7 @@ import com.example.travelme.models.User
 import com.example.travelme.navigation.RootNavigationGraph
 import com.example.travelme.ui.theme.AppTheme
 import com.example.travelme.viewmodels.FirebaseAuthVM
+import com.example.travelme.viewmodels.FirebaseDBVM
 import com.example.travelme.viewmodels.LocationVM
 import com.example.travelme.viewmodels.PermissionEvent
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -80,6 +81,10 @@ object DialogMessage {
 
 object AuthViewModel {
     var authViewModel: FirebaseAuthVM = FirebaseAuthVM()
+}
+
+object StoreViewModel {
+    var storeViewModel: FirebaseDBVM = FirebaseDBVM()
 }
 
 object LocationViewModel {
