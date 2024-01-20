@@ -39,4 +39,9 @@
     <string name="admin_email">admin@gmail.com</string>
     <string name="save">save</string>
     <string name="unknown_exception">Unknown exception.</string>
+    <string name="level">level:</string>
+    <string name="length">length:</string>
+    <string name="time">time:</string>
+    <string name="km"> km</string>
+    <string name="hours"> hours</string>
 </resources>

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.travelme.bitmapToUrl
 import com.example.travelme.models.User
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -16,7 +17,6 @@ import java.io.ByteArrayOutputStream
 class FirebaseAuthVM: ViewModel() {
 
     private val auth: FirebaseAuth = Firebase.auth
-    private val storageRef = FirebaseStorage.getInstance().reference
 
     private var _email: String by mutableStateOf("")
     var email: String
@@ -46,39 +46,30 @@ class FirebaseAuthVM: ViewModel() {
         onFailure: (exception: Exception) -> Unit
     ) {
         if (bitmap != null) {
-            val baos = ByteArrayOutputStream()
-            val storagePictures = storageRef.child("pics/${auth.currentUser?.uid}")
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-            val image = baos.toByteArray()
-            val upload = storagePictures.putBytes(image)
-            upload.addOnCompleteListener { uploadTask ->
-                if (uploadTask.isSuccessful) {
-                    storagePictures.downloadUrl.addOnCompleteListener { urlTask ->
-                        urlTask.result?.let {
-                            val imageUri = it
-                            val profileUpdates = userProfileChangeRequest {
-                                displayName = name
-                                photoUri = imageUri
-                            }
-                            auth.currentUser!!.updateProfile(profileUpdates)
-                                .addOnCompleteListener { update_task ->
-                                    if (update_task.isSuccessful) {
-                                        onSuccess(
-                                            User(
-                                                id = auth.currentUser?.uid ?: "",
-                                                email = auth.currentUser?.email ?: "",
-                                                name = name,
-                                                profileImage = auth.currentUser?.photoUrl.toString()
-                                            )
-                                        )
-                                    }
-                                }
-                        }
+            bitmapToUrl(
+                bitmap = bitmap,
+                path ="pics/",
+                onSuccess = { result ->
+                    val profileUpdates = userProfileChangeRequest {
+                        displayName = name
+                        photoUri = result
                     }
-                } else {
-                    onFailure(uploadTask.exception ?: Exception("Unknown exception."))
-                }
-            }
+                    auth.currentUser!!.updateProfile(profileUpdates)
+                        .addOnCompleteListener { update_task ->
+                            if (update_task.isSuccessful) {
+                                onSuccess(
+                                    User(
+                                        id = auth.currentUser?.uid ?: "",
+                                        email = auth.currentUser?.email ?: "",
+                                        name = name,
+                                        profileImage = auth.currentUser?.photoUrl.toString()
+                                    )
+                                )
+                            }
+                        }
+                },
+                onFailure = {}
+            )
         }
         else
         {

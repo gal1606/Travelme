@@ -82,6 +82,7 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
                         AuthViewModel.authViewModel.register(
                             onSuccess = {
                                 CurrentUser.currentUser = it
+                                StoreViewModel.storeViewModel.addUser(CurrentUser.currentUser, {}, {})
                                 navController.navigate(Graph.HOME)
                             },
                             onFailure = { exception ->

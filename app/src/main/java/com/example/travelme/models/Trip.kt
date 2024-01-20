@@ -1,13 +1,14 @@
 package com.example.travelme.models
 
+import android.net.Uri
 import com.google.android.gms.maps.model.LatLng
 
 data class Trip(
-    val id: String = "",
-    val description: String,
-    val coord: LatLng,
-    var level: Int,
-    val images: List<String>,
-    val length: Double,
-    val time: Double
+    var id: String = "",
+    val description: String  = "",
+    val coord: LatLng = LatLng(0.0,0.0),
+    var level: String = "",
+    var images: ArrayList<Uri> = arrayListOf(),
+    val length: Double = 0.0,
+    val time: Double = 0.0
 )

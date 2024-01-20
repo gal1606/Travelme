@@ -1,21 +1,27 @@
 package com.example.travelme.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.travelme.*
 import com.example.travelme.R
+import com.example.travelme.models.Trip
 import com.example.travelme.navigation.Auth
-import com.example.travelme.ui.components.TripUserRow
+import com.example.travelme.ui.components.TripDetails
 import com.example.travelme.ui.theme.spacing
+import com.example.travelme.viewmodels.TripVM
 
 @Composable
 fun HomeFragment(navController: NavHostController) {
+    val tripsList: MutableState<ArrayList<TripVM>> = remember { mutableStateOf(ArrayList()) }
 
     LaunchedEffect(Unit) {
         AuthViewModel.authViewModel.isUserLoggedIn(
@@ -29,6 +35,13 @@ fun HomeFragment(navController: NavHostController) {
                 DialogMessage.dialogMessage = exception.message.toString()
                 ShowDialog.showDialog.value = true
             }
+        )
+
+        StoreViewModel.storeViewModel.getTrips(
+            onSuccess = { result ->
+                tripsList.value = result
+            },
+            onFailure = {}
         )
     }
 
@@ -52,12 +65,18 @@ fun HomeFragment(navController: NavHostController) {
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .padding(spacing.medium)
-                .padding(top = spacing.extraLarge),
+                .padding(top = spacing.extraLarge)
+                .height(400.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            repeat(5)
+            for(i in 0..tripsList.value.size - 1)
             {
-                TripUserRow()
+                TripDetails(
+                    tripsList.value[i],
+                    onLikeClick = { StoreViewModel.storeViewModel.like(tripsList.value[i].id, {}, {}) },
+                    onDoneClick = { StoreViewModel.storeViewModel.done(tripsList.value[i].id, {}, {}) }
+                )
             }
         }
     }

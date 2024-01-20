@@ -95,6 +95,4 @@ object CurrentUser {
     lateinit var currentUser: User
 }
 
-object CurrentTrip {
-    lateinit var currentTrip: Trip
-}
+

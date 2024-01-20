@@ -12,11 +12,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.travelme.models.User
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.ktx.userProfileChangeRequest
+import com.google.firebase.storage.FirebaseStorage
 import com.google.maps.android.compose.*
+import java.io.ByteArrayOutputStream
 import java.io.FileDescriptor
 import java.io.IOException
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @Composable
 fun RationaleAlert(onDismiss: () -> Unit, onConfirm: () -> Unit) {
@@ -73,3 +79,35 @@ fun uriToBitmap(selectedFileUri: Uri, context: Context): Bitmap? {
     }
     return null
 }
+
+fun bitmapToUrl(
+    bitmap: Bitmap?,
+    path: String,
+    onSuccess: (result: Uri) -> Unit,
+    onFailure: (exception: Exception) -> Unit) {
+
+    val storageRef = FirebaseStorage.getInstance().reference
+
+    if (bitmap != null) {
+        val baos = ByteArrayOutputStream()
+        val storagePictures = storageRef.child(path + OffsetDateTime.now(ZoneOffset.UTC))
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        val image = baos.toByteArray()
+        val upload = storagePictures.putBytes(image)
+        upload.addOnCompleteListener { uploadTask ->
+            if (uploadTask.isSuccessful) {
+                storagePictures.downloadUrl.addOnCompleteListener { urlTask ->
+                    urlTask.result?.let {
+                        val imageUri = it
+                        onSuccess(it)
+                    }
+                }
+            }
+            else {
+                onFailure(uploadTask.exception ?: Exception("Unknown exception."))
+            }
+        }
+    }
+}
+
+

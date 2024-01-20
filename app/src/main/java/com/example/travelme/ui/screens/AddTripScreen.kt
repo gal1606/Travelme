@@ -1,5 +1,6 @@
 package com.example.travelme.ui.screens
 
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -25,24 +26,29 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.travelme.*
 import com.example.travelme.R
+import com.example.travelme.models.Trip
+import com.example.travelme.navigation.Graph
+import com.example.travelme.ui.components.ErrorDialog
 import com.example.travelme.ui.components.LevelDropDown
+import com.example.travelme.viewmodels.TripVM
 import com.example.travelme.viewmodels.ViewState
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun AddTripScreen() {
+fun AddTripScreen(navController: NavHostController) {
     val context = LocalContext.current
     val viewState by LocationViewModel.locationViewModel.viewState.collectAsStateWithLifecycle()
-
-    var selectImages by remember { mutableStateOf(listOf<Uri>()) }
+    val tripViewModel = remember { TripVM() }
+    var selectImages by remember { mutableStateOf(arrayListOf<Uri>()) }
     val galleryLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) {
-            selectImages = it
+            selectImages = it as ArrayList<Uri>
         }
 
     with(viewState) {
@@ -59,10 +65,11 @@ fun AddTripScreen() {
                     cameraState.centerOnLocation(currentLoc)
                 }
 
+                if (ShowDialog.showDialog.value) {
+                    ErrorDialog(DialogMessage.dialogMessage)
+                }
+
                 val markerState = rememberMarkerState(position = LatLng(currentLoc.latitude, currentLoc.longitude))
-                var setLengthText by remember { mutableStateOf("") }
-                var currentText by remember { mutableStateOf("") }
-                var setTimeText by remember { mutableStateOf("") }
 
                 Column(
                     modifier = Modifier
@@ -98,7 +105,7 @@ fun AddTripScreen() {
                             textAlign = TextAlign.Left,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        LevelDropDown()
+                        LevelDropDown(tripViewModel)
                     }
 
                     Button(
@@ -114,6 +121,9 @@ fun AddTripScreen() {
                         rows = GridCells.Fixed(1)
                     ) {
                         items(selectImages) { uri ->
+
+                            tripViewModel.images = selectImages
+
                             Image(
                                 painter = rememberAsyncImagePainter(uri),
                                 contentScale = ContentScale.FillHeight,
@@ -129,8 +139,11 @@ fun AddTripScreen() {
                     }
 
                     OutlinedTextField(
-                        value = currentText,
-                        onValueChange = { currentText = it },
+                        value = tripViewModel.description,
+                        onValueChange = {
+
+                            tripViewModel.description = it
+                        },
                         label = { Text(stringResource(id = R.string.trip_description)) },
                         minLines = 3,
                         maxLines = 3,
@@ -148,10 +161,12 @@ fun AddTripScreen() {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         TextField(
-                            value = setLengthText,
-                            onValueChange = { setLengthText = it },
+                            value = tripViewModel.length.toString(),
+                            onValueChange = {
+                                tripViewModel.length = it.toDouble()
+                            },
                             label = { Text(stringResource(id = R.string.set_length)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                         )
                     }
 
@@ -163,8 +178,10 @@ fun AddTripScreen() {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         TextField(
-                            value = setTimeText,
-                            onValueChange = { setTimeText = it },
+                            value = tripViewModel.time.toString(),
+                            onValueChange = {
+                                tripViewModel.time = it.toDouble()
+                            },
                             label = { Text(stringResource(id = R.string.set_time)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
@@ -172,7 +189,29 @@ fun AddTripScreen() {
 
                     Button(
                         onClick = {
-                            saveTripInDB(markerState.position)
+                            if (tripViewModel.description.isEmpty() ||
+                                tripViewModel.level == "" ||
+                                tripViewModel.images.size == 0 ||
+                                tripViewModel.length == 0.0 ||
+                                tripViewModel.time == 0.0 )
+                            {
+                                DialogMessage.dialogMessage = context.getString(R.string.error_empty_fields)
+                                ShowDialog.showDialog.value = true
+                            }
+                            else
+                            {
+                                saveTripInDB(Trip(
+                                    tripViewModel.id,
+                                    tripViewModel.description,
+                                    markerState.position,
+                                    tripViewModel.level,
+                                    tripViewModel.images,
+                                    tripViewModel.length,
+                                    tripViewModel.time
+                                ), context)
+
+                                navController.navigate(Graph.MYTRIPS)
+                            }
                         },
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
@@ -187,7 +226,16 @@ fun AddTripScreen() {
     }
 }
 
-fun saveTripInDB(position: LatLng)
-{
-    StoreViewModel.storeViewModel.addTrip(position, {}, {})
+fun saveTripInDB(trip: Trip, context: Context) {
+    val imageBitmap = uriToBitmap(trip.images[0], context)
+    trip.images = arrayListOf<Uri>()
+    bitmapToUrl(
+        bitmap = imageBitmap,
+        path = "trips/",
+        onSuccess = { result ->
+            trip.images.add(result)
+            StoreViewModel.storeViewModel.addTrip(trip, {}, {})
+        },
+        onFailure = {}
+    )
 }

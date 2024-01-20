@@ -27,7 +27,7 @@ fun HomeNavGraph(navController: NavHostController) {
             ProfileFragment(navController)
         }
         composable(route = BottomBarScreen.Search.route) {
-            SearchTripsScreen()
+            SearchTripsScreen(navController)
         }
         myTripsNavGraph(navController)
     }
@@ -43,7 +43,7 @@ fun NavGraphBuilder.myTripsNavGraph(navController: NavHostController) {
             MyTripsScreen(navController)
         }
         composable(route = ProfileScreen.AddTrip.route) {
-            AddTripScreen()
+            AddTripScreen(navController)
         }
     }
 }

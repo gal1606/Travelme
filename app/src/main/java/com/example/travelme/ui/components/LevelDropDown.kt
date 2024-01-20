@@ -1,5 +1,6 @@
 package com.example.travelme.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.*
@@ -7,13 +8,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.travelme.viewmodels.TripVM
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun LevelDropDown() {
+fun LevelDropDown(trip: TripVM = remember { TripVM() }) {
     val levels = arrayOf("", "easy", "medium", "hard")
     var expanded by remember { mutableStateOf(false) }
-    var selectedText by remember { mutableStateOf(levels[0]) }
 
     Box(
         modifier = Modifier
@@ -27,8 +28,10 @@ fun LevelDropDown() {
             }
         ) {
             TextField(
-                value = selectedText,
-                onValueChange = {},
+                value = trip.level,
+                onValueChange = {
+                    trip.level = it
+                },
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor()
@@ -42,7 +45,7 @@ fun LevelDropDown() {
                     DropdownMenuItem(
                         text = { Text(text = item) },
                         onClick = {
-                            selectedText = item
+                            trip.level = item
                             expanded = false
                         }
                     )
