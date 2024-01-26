@@ -1,0 +1,33 @@
+package com.example.travelme.data
+
+import androidx.room.Dao
+import androidx.room.Insert
+import com.example.travelme.models.Trip
+import androidx.room.OnConflictStrategy
+import androidx.room.Update
+import androidx.room.Delete
+import androidx.room.Query
+import androidx.room.Upsert
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface TripDao {
+
+    @Upsert
+    suspend fun upsertAll(trips: List<Trip>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(trip: Trip)
+
+    @Update
+    suspend fun update(trip: Trip)
+
+    @Delete
+    suspend fun delete(trip: Trip)
+
+    @Query("SELECT * from trips WHERE id = :id")
+    fun getTrip(id: String): Flow<Trip>
+
+    @Query("SELECT * from trips")
+    fun getAllTrips(): Flow<List<Trip>>
+}

@@ -1,5 +1,6 @@
 package com.example.travelme.ui.screens
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.os.Build
@@ -25,6 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
@@ -39,13 +42,30 @@ import com.example.travelme.viewmodels.ViewState
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
+@SuppressLint("MutableCollectionMutableState")
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun AddTripScreen(navController: NavHostController) {
+fun AddTripScreen(
+    navController: NavHostController,
+    viewModel: TripVM = hiltViewModel()
+) {
     val context = LocalContext.current
     val viewState by LocationViewModel.locationViewModel.viewState.collectAsStateWithLifecycle()
-    val tripViewModel = remember { TripVM() }
     var selectImages by remember { mutableStateOf(arrayListOf<Uri>()) }
+    var descr by remember { mutableStateOf("") }
+    var length by remember { mutableDoubleStateOf(0.0) }
+    var time by remember { mutableDoubleStateOf(0.0) }
+
+    val trip = remember {  mutableStateOf( Trip(
+        tripid = "",
+        description = "",
+        imageUrl = "",
+        coord = LatLng(0.0, 0.0),
+        level = "",
+        length = 0.0,
+        time = 0.0
+    ) ) }
+
     val galleryLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) {
             selectImages = it as ArrayList<Uri>
@@ -54,6 +74,7 @@ fun AddTripScreen(navController: NavHostController) {
     with(viewState) {
         when (this) {
             is ViewState.Success -> {
+
                 val currentLoc =
                     LatLng(
                         this.location?.latitude ?: 0.0,
@@ -105,7 +126,7 @@ fun AddTripScreen(navController: NavHostController) {
                             textAlign = TextAlign.Left,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        LevelDropDown(tripViewModel)
+                        LevelDropDown(trip)
                     }
 
                     Button(
@@ -122,7 +143,7 @@ fun AddTripScreen(navController: NavHostController) {
                     ) {
                         items(selectImages) { uri ->
 
-                            tripViewModel.images = selectImages
+                            trip.value.imageUrl = selectImages[0].toString()
 
                             Image(
                                 painter = rememberAsyncImagePainter(uri),
@@ -139,10 +160,9 @@ fun AddTripScreen(navController: NavHostController) {
                     }
 
                     OutlinedTextField(
-                        value = tripViewModel.description,
+                        value = descr,
                         onValueChange = {
-
-                            tripViewModel.description = it
+                            descr = it
                         },
                         label = { Text(stringResource(id = R.string.trip_description)) },
                         minLines = 3,
@@ -161,9 +181,9 @@ fun AddTripScreen(navController: NavHostController) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         TextField(
-                            value = tripViewModel.length.toString(),
+                            value = length.toString(),
                             onValueChange = {
-                                tripViewModel.length = it.toDouble()
+                                length = it.toDouble()
                             },
                             label = { Text(stringResource(id = R.string.set_length)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
@@ -178,9 +198,9 @@ fun AddTripScreen(navController: NavHostController) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         TextField(
-                            value = tripViewModel.time.toString(),
+                            value = time.toString(),
                             onValueChange = {
-                                tripViewModel.time = it.toDouble()
+                                time = it.toDouble()
                             },
                             label = { Text(stringResource(id = R.string.set_time)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -189,28 +209,24 @@ fun AddTripScreen(navController: NavHostController) {
 
                     Button(
                         onClick = {
-                            if (tripViewModel.description.isEmpty() ||
-                                tripViewModel.level == "" ||
-                                tripViewModel.images.size == 0 ||
-                                tripViewModel.length == 0.0 ||
-                                tripViewModel.time == 0.0 )
+                            trip.value.coord = markerState.position
+                            trip.value.description = descr
+                            trip.value.length = length
+                            trip.value.time = time
+
+                            if (trip.value.description.isEmpty() ||
+                                trip.value.level == "" ||
+                                trip.value.imageUrl == "" ||
+                                trip.value.length == 0.0 ||
+                                trip.value.time == 0.0 )
                             {
                                 DialogMessage.dialogMessage = context.getString(R.string.error_empty_fields)
                                 ShowDialog.showDialog.value = true
                             }
                             else
                             {
-                                saveTripInDB(Trip(
-                                    tripViewModel.id,
-                                    tripViewModel.description,
-                                    markerState.position,
-                                    tripViewModel.level,
-                                    tripViewModel.images,
-                                    tripViewModel.length,
-                                    tripViewModel.time
-                                ), context)
+                                saveTripInDB(trip.value, context, viewModel, navController)
 
-                                navController.navigate(Graph.MYTRIPS)
                             }
                         },
                         modifier = Modifier
@@ -226,15 +242,23 @@ fun AddTripScreen(navController: NavHostController) {
     }
 }
 
-fun saveTripInDB(trip: Trip, context: Context) {
-    val imageBitmap = uriToBitmap(trip.images[0], context)
-    trip.images = arrayListOf<Uri>()
+fun saveTripInDB(trip: Trip, context: Context, viewModel: TripVM, navController: NavHostController) {
+    val imageBitmap = uriToBitmap(trip.imageUrl.toUri(), context)
+    trip.imageUrl = ""
     bitmapToUrl(
         bitmap = imageBitmap,
         path = "trips/",
         onSuccess = { result ->
-            trip.images.add(result)
-            StoreViewModel.storeViewModel.addTrip(trip, {}, {})
+            trip.imageUrl = result.toString()
+            StoreViewModel.storeViewModel.addTrip(
+                trip = trip,
+                onSuccess = {
+                    viewModel.createTrip(trip, context).apply {
+                        navController.navigate(Graph.MYTRIPS)
+                    }
+                },
+                onFailure = {}
+            )
         },
         onFailure = {}
     )

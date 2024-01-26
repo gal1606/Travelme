@@ -3,6 +3,7 @@ package com.example.travelme
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -22,13 +23,17 @@ import com.example.travelme.viewmodels.PermissionEvent
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.File
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     @OptIn(ExperimentalPermissionsApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val dexOutputDir: File = codeCacheDir
+        dexOutputDir.setReadOnly()
+
         val locationViewModel: LocationVM by viewModels()
 
         setContent {

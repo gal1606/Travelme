@@ -12,15 +12,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.travelme.R
-import com.example.travelme.StoreViewModel
+import com.example.travelme.models.Trip
+import com.example.travelme.models.UserDone
+import com.example.travelme.models.UserLike
 import com.example.travelme.ui.theme.spacing
-import com.example.travelme.viewmodels.TripVM
 
 @Composable
 fun TripDetails(
-    tripViewModel: TripVM = remember { TripVM() },
+    trip: Trip,
+    liked: List<UserLike>,
+    done: List<UserDone>,
     onLikeClick: (String) -> Unit,
     onDoneClick: (String) -> Unit,) {
 
@@ -29,23 +33,10 @@ fun TripDetails(
     var doneEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        StoreViewModel.storeViewModel.isTripLiked(
-            tripViewModel.id,
-            onSuccess = { result ->
-                likeEnabled = !result
-            },
-            onFailure = {}
-        )
-
-        StoreViewModel.storeViewModel.isTripDone(
-            tripViewModel.id,
-            onSuccess = { result ->
-                doneEnabled = !result
-            },
-            onFailure = {}
-        )
+        likeEnabled = trip.tripid !in liked.map { it.tripid }
+        doneEnabled = trip.tripid !in done.map { it.tripid }
     }
-    if (tripViewModel.images.size > 0) {
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -61,14 +52,14 @@ fun TripDetails(
                     CircularProgressIndicator()
                 }
 
-            Image(
-                painter = rememberAsyncImagePainter(
-                    model = tripViewModel.images[0],
+                    Image(
+                    painter = rememberAsyncImagePainter(
+                    model = trip.imageUrl,
                     onSuccess = {
                         spinner = false
                     },
                     onError = {
-                        var d = 5
+
                     }
                 ),
                 contentDescription = null,
@@ -80,7 +71,7 @@ fun TripDetails(
             )
 
             Text(
-                text = tripViewModel.description,
+                text = trip.description,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .padding(spacing.medium)
@@ -99,7 +90,7 @@ fun TripDetails(
                 )
 
                 Text(
-                    text = tripViewModel.level,
+                    text = trip.level,
                     color = colorResource(id = R.color.purple_700),
                     style = MaterialTheme.typography.titleLarge,
                 )
@@ -111,7 +102,7 @@ fun TripDetails(
                 )
 
                 Text(
-                    text = tripViewModel.length.toString() + stringResource(id = R.string.km),
+                    text = trip.length.toString() + stringResource(id = R.string.km),
                     color = colorResource(id = R.color.purple_700),
                     style = MaterialTheme.typography.titleLarge,
                 )
@@ -129,7 +120,7 @@ fun TripDetails(
                 )
 
                 Text(
-                    text = tripViewModel.time.toString() + stringResource(id = R.string.hours),
+                    text = trip.time.toString() + stringResource(id = R.string.hours),
                     color = colorResource(id = R.color.purple_700),
                     style = MaterialTheme.typography.titleLarge,
                 )
@@ -137,7 +128,7 @@ fun TripDetails(
                 Button(
                     onClick = {
                         likeEnabled = false
-                        onLikeClick(tripViewModel.id)
+                        onLikeClick(trip.tripid)
                     },
                     modifier = Modifier
 
@@ -154,7 +145,7 @@ fun TripDetails(
                 Button(
                     onClick = {
                         doneEnabled = false
-                        onDoneClick(tripViewModel.id)
+                        onDoneClick(trip.tripid)
                     },
                     modifier = Modifier
                         .width(60.dp),
@@ -168,7 +159,8 @@ fun TripDetails(
                 }
             }
         }
-    }
 }
+
+
 
 

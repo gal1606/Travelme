@@ -1,34 +1,31 @@
 package com.example.travelme.ui.screens
 
 import android.content.Context
-import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.travelme.*
 import com.example.travelme.R
 import com.example.travelme.models.Trip
-import com.example.travelme.navigation.Graph
+import com.example.travelme.models.UserDone
+import com.example.travelme.models.UserLike
 import com.example.travelme.ui.components.BottomBarScreen
 import com.example.travelme.ui.components.ErrorDialog
 import com.example.travelme.ui.components.LevelDropDown
@@ -40,13 +37,27 @@ import com.google.maps.android.compose.*
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun SearchTripsScreen(navController: NavHostController) {
+fun SearchTripsScreen(
+    navController: NavHostController,
+    viewModel: TripVM = hiltViewModel()
+) {
     val context = LocalContext.current
     val viewState by LocationViewModel.locationViewModel.viewState.collectAsStateWithLifecycle()
-    val tripViewModel = remember { mutableStateOf(TripVM()) }
+    val trips by viewModel.trips.observeAsState(initial = emptyList())
+    val liked by viewModel.liked.observeAsState(initial = emptyList())
+    val done by viewModel.done.observeAsState(initial = emptyList())
     val markersArray: MutableState<List<LatLng>> = remember { mutableStateOf(emptyList()) }
-    val tripsArray: MutableState<ArrayList<TripVM>> = remember { mutableStateOf(arrayListOf()) }
     val showSearchPopup = remember { mutableStateOf(false) }
+    var descr by remember { mutableStateOf("") }
+    val trip = remember { mutableStateOf(Trip(
+        tripid = "",
+        description = "",
+        imageUrl = "",
+        coord = LatLng(0.0, 0.0),
+        level = "",
+        length = 0.0,
+        time = 0.0
+    ) ) }
 
     with(viewState) {
         when (this) {
@@ -60,14 +71,7 @@ fun SearchTripsScreen(navController: NavHostController) {
 
                 LaunchedEffect(key1 = currentLoc) {
                     cameraState.centerOnLocation(currentLoc)
-
-                    StoreViewModel.storeViewModel.getTrips(
-                        onSuccess = { result ->
-                            markersArray.value = result.map { it.coord }
-                            tripsArray.value = result
-                        },
-                        onFailure = {}
-                    )
+                    markersArray.value = trips.map { it.coord }
                 }
 
                 if (ShowDialog.showDialog.value) {
@@ -75,7 +79,14 @@ fun SearchTripsScreen(navController: NavHostController) {
                 }
 
                 if(showSearchPopup.value) {
-                    searchTripsPopup(navController, tripViewModel.value, tripsArray.value)
+                    SearchTripsPopup(
+                        navController,
+                        trip.value,
+                        trips,
+                        liked,
+                        done,
+                        viewModel,
+                        context)
                 }
 
                 Column(
@@ -98,8 +109,8 @@ fun SearchTripsScreen(navController: NavHostController) {
                                 title = "MyPosition",
                                 snippet = "This is a description of this Marker",
                                 draggable = true,
-                                onClick = { it ->
-                                    tripViewModel.value.coord = it.position
+                                onClick = {
+                                    trip.value.coord = it.position
                                     false
                                 }
                             )
@@ -117,12 +128,12 @@ fun SearchTripsScreen(navController: NavHostController) {
                             textAlign = TextAlign.Left,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        LevelDropDown(tripViewModel.value)
+                        LevelDropDown(trip)
                     }
 
                     TextField(
-                        value = tripViewModel.value.description,
-                        onValueChange = { tripViewModel.value.description = it },
+                        value = descr,
+                        onValueChange = { descr = it },
                         label = { Text(stringResource(id = R.string.search_description)) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -131,7 +142,10 @@ fun SearchTripsScreen(navController: NavHostController) {
                     )
 
                     Button(
-                        onClick = { showSearchPopup.value = true },
+                        onClick = {
+                            trip.value.description = descr
+                            showSearchPopup.value = true
+                        },
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
                             .padding(16.dp)
@@ -148,9 +162,17 @@ fun SearchTripsScreen(navController: NavHostController) {
 }
 
 @Composable
-fun searchTripsPopup(navController: NavHostController, trip: TripVM, trips: ArrayList<TripVM>)
+fun SearchTripsPopup(
+    navController: NavHostController,
+    trip: Trip,
+    trips: List<Trip>,
+    liked: List<UserLike>,
+    done: List<UserDone>,
+    viewModel: TripVM,
+    context: Context
+)
 {
-    var filteredTrips: List<TripVM> = trips
+    var filteredTrips: List<Trip> = trips
 
     if (!(trip.coord.latitude == 0.0 && trip.coord.longitude == 0.0))
     {
@@ -174,14 +196,20 @@ fun searchTripsPopup(navController: NavHostController, trip: TripVM, trips: Arra
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ){
-            for(i in 0..filteredTrips.size - 1)
+            for(i in filteredTrips.indices)
             {
                 TripDetails(
-                    filteredTrips[i],
+                    trip = filteredTrips[i],
+                    liked = liked,
+                    done = done,
                     onLikeClick = {
-                        StoreViewModel.storeViewModel.like(filteredTrips[i].id, {}, {})
+                        StoreViewModel.storeViewModel.like(filteredTrips[i].tripid, {}, {})
+                        viewModel.createLike(trips[i], context)
                     },
-                    onDoneClick = { StoreViewModel.storeViewModel.done(filteredTrips[i].id, {}, {}) }
+                    onDoneClick = {
+                        StoreViewModel.storeViewModel.done(filteredTrips[i].tripid, {}, {})
+                        viewModel.createDone(trips[i], context)
+                    }
                 )
             }
         }
