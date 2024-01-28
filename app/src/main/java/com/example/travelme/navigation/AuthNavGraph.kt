@@ -98,6 +98,6 @@ fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
 }
 
 sealed class Auth(val route: String) {
-    object Login: Auth(route="LOGIN")
-    object SignUp: Auth(route="SIGNUP")
+    data object Login: Auth(route="LOGIN")
+    data object SignUp: Auth(route="SIGNUP")
 }

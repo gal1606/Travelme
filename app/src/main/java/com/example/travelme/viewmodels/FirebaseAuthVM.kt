@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.travelme.CurrentUser
 import com.example.travelme.bitmapToUrl
 import com.example.travelme.models.User
 import com.google.firebase.ktx.Firebase
@@ -55,8 +56,8 @@ class FirebaseAuthVM: ViewModel() {
                         photoUri = result
                     }
                     auth.currentUser!!.updateProfile(profileUpdates)
-                        .addOnCompleteListener { update_task ->
-                            if (update_task.isSuccessful) {
+                        .addOnCompleteListener { updateTask ->
+                            if (updateTask.isSuccessful) {
                                 onSuccess(
                                     User(
                                         id = auth.currentUser?.uid ?: "",

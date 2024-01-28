@@ -1,26 +1,45 @@
 package com.example.travelme.ui.screens
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.example.travelme.ui.components.AdminFooter
-import com.example.travelme.ui.components.TripAdminRow
-import com.example.travelme.ui.theme.AppTheme
+import com.example.travelme.AuthViewModel
+import com.example.travelme.StoreViewModel
+import com.example.travelme.models.User
+import com.example.travelme.ui.components.UserDetails
 import com.example.travelme.ui.theme.spacing
 
+@SuppressLint("MutableCollectionMutableState", "SuspiciousIndentation")
 @Composable
-fun AdminPendingScreen(navController: NavHostController) {
-    val spacing = spacing
+fun UsersFragment() {
+
+    var users by remember { mutableStateOf<ArrayList<User>>(arrayListOf()) }
+    var showUsers by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        StoreViewModel.storeViewModel.getUsers(
+            onSuccess = {
+                showUsers = true
+                users = it
+            },
+            onFailure = {}
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -34,31 +53,14 @@ fun AdminPendingScreen(navController: NavHostController) {
                 .padding(spacing.medium)
                 .background(Color.LightGray)
                 .fillMaxWidth()
-                .height(400.dp)
+                .wrapContentHeight()
                 .verticalScroll(rememberScrollState())
         ) {
-            repeat(10)
+            if (showUsers)
+            for ( i in 0..< users.size)
             {
-                TripAdminRow()
+                UserDetails(users[i])
             }
         }
-
-        AdminFooter()
-    }
-}
-
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
-@Composable
-fun AdminPendingScreenPreviewLight() {
-    AppTheme {
-        AdminPendingScreen(rememberNavController())
-    }
-}
-
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-fun AdminPendingScreenPreviewDark() {
-    AppTheme {
-        AdminPendingScreen(rememberNavController())
     }
 }

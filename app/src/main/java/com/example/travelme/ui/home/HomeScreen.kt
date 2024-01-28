@@ -1,10 +1,14 @@
 package com.example.travelme.ui.home
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigation
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigationItem
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,27 +19,43 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.travelme.CurrentUser
 import com.example.travelme.navigation.HomeNavGraph
 import com.example.travelme.ui.components.BottomBarScreen
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun HomeScreen(navController: NavHostController = rememberNavController()) {
+fun HomeScreen(navController:NavHostController = rememberNavController()) {
     Scaffold(
-        bottomBar = { BottomBar(navController = navController) },
+        bottomBar = {
+            BottomBar(navController)
+        },
         contentColor = Color.White,
     ) {
         HomeNavGraph(navController)
     }
+
 }
 
 @Composable
 fun BottomBar(navController: NavHostController) {
-    val screens = listOf(
-        BottomBarScreen.Home,
-        BottomBarScreen.Profile,
-        BottomBarScreen.Search,
-    )
+
+    val isAdmin = CurrentUser.currentUser.email == "admin@gmail.com"
+
+    val screens = if (isAdmin)
+        listOf(
+            BottomBarScreen.Users,
+            BottomBarScreen.Pending,
+            BottomBarScreen.Logout,
+        )
+    else
+        listOf(
+            BottomBarScreen.Home,
+            BottomBarScreen.Profile,
+            BottomBarScreen.Search,
+        )
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 

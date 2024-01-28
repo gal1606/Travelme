@@ -38,7 +38,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AppTheme {
-                val navController = rememberNavController()
                 val permissionState = rememberMultiplePermissionsState(
                     permissions = listOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -70,7 +69,7 @@ class MainActivity : ComponentActivity() {
                 }
                 LocationViewModel.locationViewModel = locationViewModel
 
-                RootNavigationGraph(navController = navController)
+                RootNavigationGraph()
             }
         }
     }

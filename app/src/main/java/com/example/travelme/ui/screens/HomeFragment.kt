@@ -1,5 +1,6 @@
 package com.example.travelme.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,14 +12,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import com.example.travelme.*
 import com.example.travelme.R
-import com.example.travelme.navigation.Auth
 import com.example.travelme.ui.components.TripDetails
 import com.example.travelme.ui.theme.spacing
 import com.example.travelme.viewmodels.TripVM
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.LocalContext
+import com.example.travelme.navigation.Graph
 
+@SuppressLint("SuspiciousIndentation")
 @Composable
 fun HomeFragment(
     navController: NavHostController,
@@ -34,7 +36,7 @@ fun HomeFragment(
             onSuccess = { isLogged ->
                 if (!isLogged)
                 {
-                    navController.navigate(route = Auth.Login.route)
+                    navController.navigate(route = Graph.HOME)
                 }
             },
             onFailure = { exception ->
@@ -43,6 +45,10 @@ fun HomeFragment(
             }
         )
     }
+
+    if (CurrentUser.currentUser.email == "admin@gmail.com")
+        UsersFragment()
+    else
 
     Column(
         modifier = Modifier

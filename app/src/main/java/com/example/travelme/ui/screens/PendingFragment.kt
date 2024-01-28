@@ -13,13 +13,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.example.travelme.ui.components.AdminFooter
-import com.example.travelme.ui.components.AdminUserRow
+import com.example.travelme.ui.components.TripAdminRow
 import com.example.travelme.ui.theme.AppTheme
 import com.example.travelme.ui.theme.spacing
 
 @Composable
-fun AdminUsersScreen(navController: NavHostController) {
+fun PendingFragment(navController: NavHostController) {
     val spacing = spacing
     Column(
         modifier = Modifier
@@ -39,26 +38,10 @@ fun AdminUsersScreen(navController: NavHostController) {
         ) {
             repeat(10)
             {
-                AdminUserRow()
+                TripAdminRow()
             }
         }
 
-        AdminFooter()
-    }
-}
-
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
-@Composable
-fun AdminUsersScreenPreviewLight() {
-    AppTheme {
-        AdminUsersScreen(rememberNavController())
-    }
-}
-
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-fun AdminUsersScreenPreviewDark() {
-    AppTheme {
-        AdminUsersScreen(rememberNavController())
+        //AdminFooter()
     }
 }

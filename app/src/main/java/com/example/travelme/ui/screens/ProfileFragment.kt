@@ -27,8 +27,11 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.travelme.AuthViewModel
 import com.example.travelme.CurrentUser
 import com.example.travelme.R
+import com.example.travelme.StoreViewModel
+import com.example.travelme.navigation.Auth
 import com.example.travelme.navigation.Graph
 import com.example.travelme.navigation.ProfileScreen
+import com.example.travelme.ui.components.BottomBarScreen
 import com.example.travelme.ui.theme.spacing
 import com.example.travelme.uriToBitmap
 
@@ -154,8 +157,15 @@ fun ProfileFragment(navController: NavHostController) {
                         img,
                         name,
                         onSuccess = { user ->
-                            CurrentUser.currentUser = user
-                            navController.navigate(Graph.HOME)
+                            CurrentUser.currentUser.profileImage = user.profileImage
+                            CurrentUser.currentUser.name = user.name
+                            StoreViewModel.storeViewModel.updateUser(
+                                user = CurrentUser.currentUser,
+                                onSuccess = {
+                                    navController.navigate(Graph.HOME)
+                                },
+                                onFailure = {}
+                            )
                         },
                         onFailure = {}
                     )
@@ -180,7 +190,11 @@ fun ProfileFragment(navController: NavHostController) {
                 onClick = {
                     AuthViewModel.authViewModel.logout(
                         onSuccess = {
-                            navController.navigate(Graph.HOME)
+                            AuthViewModel.authViewModel.email = ""
+                            AuthViewModel.authViewModel.password = ""
+                            CurrentUser.currentUser.email = ""
+
+                            navController.navigate(Graph.AUTHENTICATION)
                         },
                         onFailure = { }
                     )

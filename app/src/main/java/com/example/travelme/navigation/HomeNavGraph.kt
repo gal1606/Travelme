@@ -8,12 +8,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.example.travelme.AuthViewModel
+import com.example.travelme.CurrentUser
 import com.example.travelme.ui.components.BottomBarScreen
 import com.example.travelme.ui.screens.*
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun HomeNavGraph(navController: NavHostController) {
+
     NavHost(
         navController = navController,
         route = Graph.HOME,
@@ -29,6 +32,23 @@ fun HomeNavGraph(navController: NavHostController) {
         composable(route = BottomBarScreen.Search.route) {
             SearchTripsScreen(navController)
         }
+
+        composable(route = BottomBarScreen.Pending.route) {
+            PendingFragment(navController)
+        }
+        composable(route = BottomBarScreen.Logout.route) {
+            AuthViewModel.authViewModel.logout(
+                onSuccess = {
+                    AuthViewModel.authViewModel.email = ""
+                    AuthViewModel.authViewModel.password = ""
+                    CurrentUser.currentUser.email = ""
+
+                    navController.navigate(Graph.AUTHENTICATION)
+                },
+                onFailure = { }
+            )
+        }
+
         myTripsNavGraph(navController)
     }
 }
@@ -49,6 +69,6 @@ fun NavGraphBuilder.myTripsNavGraph(navController: NavHostController) {
 }
 
 sealed class ProfileScreen(val route: String) {
-    object MyTrips : ProfileScreen(route = "MYTRIPS")
-    object AddTrip : ProfileScreen(route = "ADDTRIP")
+    data object MyTrips : ProfileScreen(route = "MYTRIPS")
+    data object AddTrip : ProfileScreen(route = "ADDTRIP")
 }

@@ -1,6 +1,5 @@
 package com.example.travelme.viewmodels
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import com.example.travelme.CurrentUser
 import com.example.travelme.models.Trip
@@ -10,9 +9,7 @@ import com.example.travelme.models.UserLike
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.toObject
-import kotlinx.coroutines.*
-import org.checkerframework.checker.units.qual.Current
+import com.google.firebase.firestore.SetOptions
 
 class FirebaseDBVM: ViewModel() {
 
@@ -55,53 +52,12 @@ class FirebaseDBVM: ViewModel() {
                     time = document.data["time"].toString().toDouble(),
                     level = document.data["level"].toString()
                 )
-               //doc.tripid = document.id
-                //doc.description = document.data["description"].toString()
-
-                //doc.images = ArrayList<Uri>()
-               // doc.imageUrl = Uri.parse(document.data["images"].toString()
-
-                //doc.level = document.data["level"].toString()
-                //doc.length = document.data["length"].toString().toDouble()
-                //doc.time = document.data["time"].toString().toDouble()
-
-                //val coord = document.data["coord"] as Map<*, *>
-                //doc.coord = LatLng(coord["latitude"].toString().toDouble(), coord["longitude"].toString().toDouble())
 
                 tripsList.add(doc)
             }
             onSuccess(tripsList)
         }
     }
-
-   private fun getTrip(
-       tripId: String,
-       onSuccess: (result: Trip) -> Unit,
-       onFailure: (exception: Exception) -> Unit
-    ) {
-
-       dbTrips.document(tripId).get().addOnSuccessListener { document ->
-
-           //doc.tripid = document.id
-           //doc.description = document.data?.get("description").toString()
-
-           //doc.images = ArrayList<Uri>()
-           //doc.images.add(Uri.parse(document.data?.get("images").toString().dropLast(1).drop(1)))
-
-           //doc.level = document.data?.get("level").toString()
-           //doc.length = document.data?.get("length").toString().toDouble()
-           val doc = Trip(
-                       tripid =     tripId,
-                       time = document.data?.get("time").toString().toDouble(),
-                       coord = LatLng(document.data?.get("coord").toString().toDouble(), document.data?.get("coord").toString().toDouble()),
-                       description = document.data?.get("description").toString(),
-                       level = document.data?.get("level").toString(),
-                       length = document.data?.get("length").toString().toDouble()
-                   )
-               }
-           }
-
-
 
     fun addUser(
         user: User,
@@ -110,10 +66,53 @@ class FirebaseDBVM: ViewModel() {
     ) {
         dbUsers.add(user)
             .addOnSuccessListener {
-                onSuccess()
+                CurrentUser.currentUser.id = it.id
+                dbUsers.document(CurrentUser.currentUser.id).update("id", CurrentUser.currentUser.id).addOnSuccessListener {
+                    onSuccess()
+                }
             }.addOnFailureListener { e ->
                 onFailure(e)
             }
+    }
+
+    fun updateUser(
+        user: User,
+        onSuccess: () -> Unit,
+        onFailure: (exception: Exception) -> Unit
+    ) {
+        dbUsers.document(CurrentUser.currentUser.id).get()
+            .addOnSuccessListener {
+                val update: MutableMap<String, String> = HashMap()
+                update["name"] = user.name
+                update["profileImage"] = user.profileImage
+                update["email"] = user.email
+                update["id"] = user.id
+                CurrentUser.currentUser = user
+                dbUsers.document(CurrentUser.currentUser.id).set(update).addOnCompleteListener {
+                    onSuccess()
+                }
+            }.addOnFailureListener { e ->
+                onFailure(e)
+            }
+    }
+
+    fun getUsers(
+        onSuccess: (result: ArrayList<User>) -> Unit,
+        onFailure: (exception: Exception) -> Unit
+    ) {
+        val usersList: ArrayList<User> = arrayListOf()
+        dbUsers.get().addOnSuccessListener { documents ->
+            for (document in documents) {
+                val user = User (
+                    name = document.data["name"].toString(),
+                    email = document.data["email"].toString(),
+                    profileImage = document.data["profileImage"].toString(),
+                    id = document.id
+                )
+                usersList.add(user)
+            }
+            onSuccess(usersList)
+        }
     }
 
     fun like(
@@ -124,7 +123,7 @@ class FirebaseDBVM: ViewModel() {
         val data = hashMapOf("tripId" to tripId)
 
         dbLike.document(CurrentUser.currentUser.id).collection("like").document(tripId)
-            .set(data).addOnCompleteListener{ it ->
+            .set(data).addOnCompleteListener{
                 onSuccess()
             }
     }
@@ -181,52 +180,6 @@ class FirebaseDBVM: ViewModel() {
                     onFailure = {}
                 )
             }
-    }
-
-    fun isTripLiked(
-        tripId: String,
-        onSuccess: (result: Boolean) -> Unit,
-        onFailure: (exception: Exception) -> Unit
-    ) {
-        var likedTrips: ArrayList<UserLike>
-        getLikedTrips(
-            onSuccess = { result ->
-                likedTrips = result
-                var trip: Trip
-                getTrip(
-                    tripId,
-                    onSuccess = { res ->
-                        trip = res
-                        onSuccess(trip.tripid in likedTrips.map { it.tripid })
-                    },
-                    onFailure = {}
-                )
-            },
-            onFailure = {}
-        )
-    }
-
-    fun isTripDone(
-        tripId: String,
-        onSuccess: (result: Boolean) -> Unit,
-        onFailure: (exception: Exception) -> Unit
-    ) {
-        var doneTrips: ArrayList<UserDone>
-        getDoneTrips(
-            onSuccess = { result ->
-                doneTrips = result
-                var trip: Trip
-                getTrip(
-                    tripId,
-                    onSuccess = { res ->
-                        trip = res
-                        onSuccess(trip.tripid in doneTrips.map { it.tripid })
-                    },
-                    onFailure = {}
-                )
-            },
-            onFailure = {}
-        )
     }
 }
 
