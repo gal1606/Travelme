@@ -63,7 +63,8 @@ fun AddTripScreen(
         coord = LatLng(0.0, 0.0),
         level = "",
         length = 0.0,
-        time = 0.0
+        time = 0.0,
+        pending = true
     ) ) }
 
     val galleryLauncher =
@@ -153,7 +154,6 @@ fun AddTripScreen(
                                     .padding(4.dp, 2.dp)
                                     .size(100.dp)
                                     .clickable {
-
                                     }
                             )
                         }
@@ -226,7 +226,6 @@ fun AddTripScreen(
                             else
                             {
                                 saveTripInDB(trip.value, context, viewModel, navController)
-
                             }
                         },
                         modifier = Modifier

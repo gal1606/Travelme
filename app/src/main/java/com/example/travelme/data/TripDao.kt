@@ -30,4 +30,7 @@ interface TripDao {
 
     @Query("SELECT * from trips")
     fun getAllTrips(): Flow<List<Trip>>
+
+    @Query("SELECT * from trips Where pending = False")
+    fun getAllTripsApplied(): Flow<List<Trip>>
 }

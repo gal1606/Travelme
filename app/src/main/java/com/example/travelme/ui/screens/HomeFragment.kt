@@ -26,7 +26,7 @@ fun HomeFragment(
     navController: NavHostController,
     viewModel: TripVM = hiltViewModel(),
 ) {
-    val trips by viewModel.trips.observeAsState(initial = emptyList())
+    val trips by viewModel.tripsApplied.observeAsState(initial = emptyList())
     val liked by viewModel.liked.observeAsState(initial = emptyList())
     val done by viewModel.done.observeAsState(initial = emptyList())
     val context = LocalContext.current

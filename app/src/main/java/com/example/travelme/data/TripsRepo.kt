@@ -14,6 +14,8 @@ class TripsRepo @Inject constructor(private val tripDao: TripDao) {
 
     fun getAllTrips() = tripDao.getAllTrips()
 
+    fun getAllTripsApplied() = tripDao.getAllTripsApplied()
+
     fun getTrip(id: String) = tripDao.getTrip(id)
 
 

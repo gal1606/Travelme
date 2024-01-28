@@ -26,6 +26,7 @@ class TripVM @Inject internal constructor(
 ) : ViewModel() {
 
    val trips: LiveData<List<Trip>> = tripsRepo.getAllTrips().asLiveData()
+   val tripsApplied: LiveData<List<Trip>> = tripsRepo.getAllTripsApplied().asLiveData()
    val liked: LiveData<List<UserLike>> = userLikeRepo.getAllTrips().asLiveData()
    val done: LiveData<List<UserDone>> = userDoneRepo.getAllTrips().asLiveData()
 
@@ -50,6 +51,24 @@ class TripVM @Inject internal constructor(
         val database = AppDatabase
         GlobalScope.launch(Dispatchers.Main) {
             database.getInstance(context).tripDao().insert(trip)
+        }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    fun applyTrip(trip: Trip, context: Context) {
+        val database = AppDatabase
+        GlobalScope.launch(Dispatchers.Main) {
+            trip.pending = false
+            database.getInstance(context).tripDao().update(trip)
+        }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    fun declineTrip(trip: Trip, context: Context) {
+        val database = AppDatabase
+        GlobalScope.launch(Dispatchers.Main) {
+            trip.pending = true
+            database.getInstance(context).tripDao().update(trip)
         }
     }
 }

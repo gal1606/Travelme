@@ -19,5 +19,6 @@ data class Trip(
     var level: String,
     var imageUrl: String = "",
     var length: Double,
-    var time: Double
+    var time: Double,
+    var pending: Boolean
 )

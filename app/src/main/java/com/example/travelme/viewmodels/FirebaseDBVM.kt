@@ -50,7 +50,8 @@ class FirebaseDBVM: ViewModel() {
                     coord = LatLng(coord["latitude"].toString().toDouble(), coord["longitude"].toString().toDouble()),
                     length = document.data["length"].toString().toDouble(),
                     time = document.data["time"].toString().toDouble(),
-                    level = document.data["level"].toString()
+                    level = document.data["level"].toString(),
+                    pending = document.data["pending"].toString().toBoolean()
                 )
 
                 tripsList.add(doc)
@@ -180,6 +181,26 @@ class FirebaseDBVM: ViewModel() {
                     onFailure = {}
                 )
             }
+    }
+
+    fun applyTrip(
+        tripId: String,
+        onSuccess: () -> Unit,
+        onFailure: (exception: Exception) -> Unit
+    ) {
+        dbTrips.document(tripId).update("pending", false).addOnSuccessListener {
+            onSuccess()
+        }
+    }
+
+    fun declineTrip(
+        tripId: String,
+        onSuccess: () -> Unit,
+        onFailure: (exception: Exception) -> Unit
+    ) {
+        dbTrips.document(tripId).update("pending", true).addOnSuccessListener {
+            onSuccess()
+        }
     }
 }
 

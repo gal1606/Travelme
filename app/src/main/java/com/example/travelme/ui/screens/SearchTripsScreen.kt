@@ -43,7 +43,7 @@ fun SearchTripsScreen(
 ) {
     val context = LocalContext.current
     val viewState by LocationViewModel.locationViewModel.viewState.collectAsStateWithLifecycle()
-    val trips by viewModel.trips.observeAsState(initial = emptyList())
+    val trips by viewModel.tripsApplied.observeAsState(initial = emptyList())
     val liked by viewModel.liked.observeAsState(initial = emptyList())
     val done by viewModel.done.observeAsState(initial = emptyList())
     val markersArray: MutableState<List<LatLng>> = remember { mutableStateOf(emptyList()) }
@@ -56,7 +56,8 @@ fun SearchTripsScreen(
         coord = LatLng(0.0, 0.0),
         level = "",
         length = 0.0,
-        time = 0.0
+        time = 0.0,
+        pending = false
     ) ) }
 
     with(viewState) {
